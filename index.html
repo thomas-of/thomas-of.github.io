@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thomas Energy</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    cursor: pointer;
+}
+
+#screen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000;
+}
+
+/* =========================================
+   メイン領域（背景画像 + テキスト）
+========================================= */
+#picture {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translateY(-50%) scaleY(1);
+    transform-origin: center center;
+    overflow: hidden;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    /* Impact フォントスタック */
+    font-family: 'Impact', 'Charcoal', 'Arial Black', sans-serif;
+    text-align: center;
+    line-height: 0.95;
+    will-change: transform, opacity;
+}
+
+/* 背景写真（透明度 0.7） */
+#picture img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
+    z-index: 1;
+    opacity: 0.7; /* 背景画像を少し薄く */
+}
+
+/* テキストコンテナ */
+.text-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 1段目 & 2段目 共通スタイル（Impact・白文字） */
+.brand-text {
+    font-size: clamp(60px, 13vw, 160px);
+    font-weight: normal;
+    letter-spacing: 0.04em;
+    color: #ffffff; /* 文字色を白に変更 */
+    text-transform: uppercase;
+    margin: 0;
+    text-shadow: none;
+}
+
+/* =========================================
+   アニメーション用要素（消える瞬間に小さな四角で発光）
+========================================= */
+#line {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 2px;
+    transform: translateY(-50%) scaleX(1);
+    transform-origin: center center;
+    background: #ffffff;
+    opacity: 0;
+    z-index: 2;
+    pointer-events: none;
+    will-change: transform, opacity, height, box-shadow;
+}
+
+/* 中央の一点で光る四角形 */
+#point {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px; /* 小さめの四角形ベース */
+    height: 3px;
+    border-radius: 0; /* 丸ではなく四角形 */
+    background: #ffffff;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: 3;
+    pointer-events: none;
+    will-change: transform, opacity, box-shadow;
+}
+</style>
+</head>
+
+<body>
+
+<div id="screen">
+    <div id="picture">
+        <!-- 指定背景画像 -->
+        <img src="https://thomas-of.github.io/sand.jpg" alt="Background">
+        <div class="text-container">
+            <div class="brand-text">Thomas</div>
+            <div class="brand-text">Energy</div>
+        </div>
+    </div>
+    <div id="line"></div>
+    <div id="point"></div>
+</div>
+
+<script>
+const picture = document.getElementById("picture");
+const line = document.getElementById("line");
+const point = document.getElementById("point");
+
+let running = false;
+let animationFrameId = null;
+let autoTimerId = null;
+
+function reset() {
+    if (autoTimerId) clearTimeout(autoTimerId);
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    running = false;
+
+    picture.style.display = "flex";
+    picture.style.opacity = "1";
+    picture.style.transform = "translateY(-50%) scaleY(1)";
+
+    line.style.opacity = "0";
+    line.style.transform = "translateY(-50%) scaleX(1)";
+    line.style.backgroundColor = "#ffffff";
+    line.style.boxShadow = "none";
+
+    point.style.opacity = "0";
+    point.style.transform = "translate(-50%, -50%) scale(0)";
+    point.style.boxShadow = "none";
+
+    // 5秒後に自動起動
+    autoTimerId = setTimeout(() => {
+        powerOff();
+    }, 5000);
+}
+
+function verticalEase(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+function horizontalEase(t) {
+    return 1 - Math.pow(1 - t, 4);
+}
+
+function powerOff() {
+    if (running) return;
+    running = true;
+
+    const start = performance.now();
+
+    function animate(now) {
+        const elapsed = now - start;
+
+        // PHASE 1: 縦方向への収束
+        if (elapsed < 500) {
+            const t = elapsed / 500;
+            const p = verticalEase(t);
+            const scaleY = Math.max(0.003, 1 - p * 0.997);
+
+            picture.style.transform = `translateY(-50%) scaleY(${scaleY})`;
+            line.style.opacity = Math.pow(t, 2.2) * 0.95;
+            line.style.transform = "translateY(-50%) scaleX(1)";
+            line.style.height = `${Math.max(1, 6 * (1 - p) + 1)}px`;
+            
+            if (t > 0.7) {
+                line.style.boxShadow = "0 0 8px #ffffff, 0 0 15px #ffffff";
+            }
+        }
+        // PHASE 2: 横方向から中央への収束
+        else if (elapsed < 1000) {
+            picture.style.opacity = "0";
+
+            const t = (elapsed - 500) / 500;
+            const p = horizontalEase(t);
+            const scaleX = Math.max(0, 1 - p);
+
+            line.style.boxShadow = "0 0 10px #ffffff, 0 0 20px #ffffff";
+            line.style.transform = `translateY(-50%) scaleX(${scaleX})`;
+            line.style.opacity = 1.0 - p * 0.1;
+            line.style.height = `${Math.max(0.7, 2 - p * 1.3)}px`;
+        }
+        // PHASE 3: 中央で小さな四角形が白く発光して消滅
+        else if (elapsed < 1180) {
+            line.style.opacity = "0";
+
+            const t = (elapsed - 1000) / 180;
+
+            if (t < 0.4) {
+                const p = t / 0.4;
+                const glow = Math.sin((p * Math.PI) / 2);
+
+                point.style.opacity = 1.0;
+                // 小さめの四角形としてスケール（最大でも小さめに制御）
+                point.style.transform = `translate(-50%, -50%) scale(${0.6 + glow * 0.6})`;
+                point.style.boxShadow = `0 0 ${8 + glow * 12}px #ffffff, 0 0 ${16 + glow * 20}px #ffffff`;
+            } else {
+                const p = (t - 0.4) / 0.6;
+                const fade = 1 - p;
+
+                point.style.opacity = fade;
+                point.style.transform = `translate(-50%, -50%) scale(${fade * 1.2})`;
+                point.style.boxShadow = `0 0 ${fade * 20}px #ffffff`;
+            }
+        }
+        // 完全消灯
+        else {
+            picture.style.display = "none";
+            line.style.opacity = "0";
+            point.style.opacity = "0";
+            point.style.transform = "translate(-50%, -50%) scale(0)";
+
+            running = false;
+            return;
+        }
+
+        animationFrameId = requestAnimationFrame(animate);
+    }
+
+    animationFrameId = requestAnimationFrame(animate);
+}
+
+// 画面をどこでもタップ/クリックでリセット
+window.addEventListener("click", reset);
+window.addEventListener("touchstart", reset, { passive: true });
+
+// 初期化・タイマースタート
+reset();
+</script>
+
+</body>
+</html>

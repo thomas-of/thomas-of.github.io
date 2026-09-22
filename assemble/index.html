@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>約束のあの場所で 一号</title>
+    <meta name="description" content="到着したい時刻と各人の到達にかかる時間から、同時に到着するための出発予定時刻を計算して箇条書き出力するツール" />
+    <meta property="og:title" content="Remix Remix 約束のあの場所で 一号" />
+    <meta property="og:description" content="到着したい時刻と各人の到達にかかる時間から、同時に到着するための出発予定時刻を計算して箇条書き出力するツール" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- コピー成功時の半透明白フラッシュ＆拡大「COPY」演出レイヤー -->
+    <div id="copy-flash-layer" class="copy-flash-layer" aria-hidden="true">
+      <div class="copy-flash-white"></div>
+      <span class="copy-flash-text">COPY</span>
+    </div>
+
+    <div class="app-container">
+      <!-- アプリケーションヘッダー -->
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="16" height="20" x="4" y="2" rx="2"/>
+              <line x1="8" x2="16" y1="6" y2="6"/>
+              <line x1="16" x2="16" y1="14" y2="18"/>
+              <path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/>
+              <path d="M12 14h.01"/><path d="M8 14h.01"/>
+              <path d="M12 18h.01"/><path d="M8 18h.01"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="brand-title">
+              <span>約束のあの場所で😊 一号</span>
+              <span class="brand-beta">β</span>
+            </h1>
+          </div>
+        </div>
+      </header>
+
+      <!-- 1. 到着したい時刻 と 予定表の一体化カード -->
+      <section class="card unified-card" aria-label="到着時刻と予定表">
+        <!-- 上段：到着したい時刻 ＋ 集結時間 -->
+        <div class="unified-row card-body">
+          <div class="card-header-title" style="margin-bottom: 14px;">
+            <div class="card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <h2 class="card-title-text">到着したい時刻</h2>
+          </div>
+
+          <div class="time-input-container">
+            <div class="time-input-row">
+              <!-- 時・分・秒 コントロール -->
+              <div class="time-box-group">
+                <!-- 時 -->
+                <div class="time-unit">
+                  <label for="target-hours" class="unit-label">時 (0-23)</label>
+                  <div class="unit-controls">
+                    <button type="button" id="btn-hours-down" class="btn-adjust" title="1時間減らす" aria-label="1時間減らす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                    </button>
+                    <input type="text" id="target-hours" class="time-number-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" value="18" />
+                    <button type="button" id="btn-hours-up" class="btn-adjust" title="1時間増やす" aria-label="1時間増やす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <span class="time-separator">:</span>
+
+                <!-- 分 -->
+                <div class="time-unit">
+                  <label for="target-minutes" class="unit-label">分 (0-59)</label>
+                  <div class="unit-controls">
+                    <button type="button" id="btn-minutes-down" class="btn-adjust" title="1分減らす" aria-label="1分減らす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                    </button>
+                    <input type="text" id="target-minutes" class="time-number-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" value="00" />
+                    <button type="button" id="btn-minutes-up" class="btn-adjust" title="1分増やす" aria-label="1分増やす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <span class="time-separator">:</span>
+
+                <!-- 秒 -->
+                <div class="time-unit">
+                  <label for="target-seconds" class="unit-label">秒 (0-59)</label>
+                  <div class="unit-controls">
+                    <button type="button" id="btn-seconds-down" class="btn-adjust" title="1秒減らす" aria-label="1秒減らす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                    </button>
+                    <input type="text" id="target-seconds" class="time-number-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" value="00" />
+                    <button type="button" id="btn-seconds-up" class="btn-adjust" title="1秒増やす" aria-label="1秒増やす">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- プレビュー表示 -->
+              <div class="time-preview-card">
+                <span class="preview-label">設定中の到達時刻</span>
+                <span id="target-time-preview" class="preview-value">18:00:00</span>
+              </div>
+            </div>
+
+            <!-- 集結時間セレクター -->
+            <div class="gathering-bar">
+              <div class="gathering-info">
+                <div class="card-icon" style="width: 32px; height: 32px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8"/><path d="M9 19.8V15m0 0H4.2M9 15l-6 6"/><path d="M15 4.2V9m0 0h4.8M15 9l6-6"/><path d="M9 4.2V9m0 0H4.2M9 9 3 3"/>
+                  </svg>
+                </div>
+                <div>
+                  <span class="gathering-title">集結時間</span>
+                  <span id="gathering-desc" class="gathering-desc">（ひとつ選択可能・計算結果に反映）</span>
+                </div>
+              </div>
+
+              <div class="gathering-buttons">
+                <button type="button" class="btn-gather" data-value="1">1</button>
+                <button type="button" class="btn-gather" data-value="3">3</button>
+                <button type="button" class="btn-gather" data-value="5">5</button>
+                <button type="button" class="btn-gather" data-value="10">10</button>
+                <button type="button" class="btn-gather" data-value="15">15</button>
+                <button type="button" id="btn-gather-clear" class="btn-gather-clear" style="display: none;">解除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 中段：待ち合わせ場所 -->
+        <div class="unified-row place-row">
+          <div class="place-label-group">
+            <div class="place-icon-wrapper" title="丘の上の木">
+              <img class="place-tree-image" src="tree-icon.png" alt="丘の上の木" />
+            </div>
+            <label for="meeting-place-input" class="place-label-text">待ち合わせ場所</label>
+          </div>
+          <div class="place-input-wrapper">
+            <input type="text" id="meeting-place-input" class="input-text" placeholder="（空欄でOK）" />
+          </div>
+        </div>
+
+        <!-- 下段：予定表 -->
+        <div class="unified-row card-body">
+          <div class="schedule-header">
+            <div class="schedule-header-left">
+              <div class="card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>
+                </svg>
+              </div>
+              <h2 class="card-title-text">予定表</h2>
+
+              <!-- コピーボタン -->
+              <button type="button" id="btn-copy-schedule" class="btn-copy-schedule" title="予定表のテキストをクリップボードにコピー">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+                <span>コピー</span>
+              </button>
+
+              <span id="schedule-gathering-badge" class="badge-gathering" style="display:none;">集結時間 0分</span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <!-- 時刻フォーマット切替 -->
+              <div class="toggle-group">
+                <button type="button" class="btn-toggle mono active" data-time-format="colon">16:45:00</button>
+                <button type="button" class="btn-toggle" data-time-format="japanese">16時45分00秒</button>
+              </div>
+
+              <!-- 箇条書き記号切替 -->
+              <div class="toggle-group">
+                <button type="button" class="btn-toggle active" data-bullet-style="none" title="記号なし">記号なし</button>
+                <button type="button" class="btn-toggle" data-bullet-style="bullet" title="中黒（・）">・</button>
+                <button type="button" class="btn-toggle" data-bullet-style="dash" title="ダッシュ（-）">-</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 予定表メインコンテンツ -->
+          <div class="schedule-grid">
+            <!-- 左カラム：部隊一覧カード -->
+            <div class="schedule-card">
+              <div class="section-caption">
+                <span>部隊一覧</span>
+                <span id="schedule-header-target" style="font-weight:400; color:var(--text-dim);">目標到着時刻：18:00:00</span>
+              </div>
+
+              <div id="schedule-empty-notice" class="empty-notice">
+                下の「設定：名前 と 到達にかかる時間」で名前を入力すると、ここに出発予定時刻が表示されます。
+              </div>
+
+              <ul id="schedule-list" class="schedule-list" style="display:none;"></ul>
+
+              <div id="schedule-warning-box" class="day-offset-warning" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                </svg>
+                <span>所要時間（秒数）が大きいため、出発予定時刻が前日になっているメンバーがいます。</span>
+              </div>
+            </div>
+
+            <!-- 右カラム：テキストプレビュー -->
+            <div class="preview-column">
+              <div class="section-caption">
+                <span>テキストプレビュー</span>
+                <span id="schedule-line-count" style="font-family:var(--font-mono); color:var(--text-dim);">0 行</span>
+              </div>
+
+              <div class="textarea-wrapper">
+                <textarea id="schedule-textarea" class="schedule-textarea" readonly placeholder="名前を入力すると、ここにコピー用テキストが表示されます"></textarea>
+                <button type="button" id="btn-copy-textarea" class="btn-icon-copy" title="テキストをコピー">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                  </svg>
+                </button>
+              </div>
+              <p class="preview-hint">※「コピー」ボタンを押すかテキストエリアをクリックして全選択し、他アプリへ貼り付けできます。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 入力：設定：名前 と 到達にかかる時間 (7行) -->
+      <section class="card" aria-label="名前と到達にかかる時間入力">
+        <div class="card-header">
+          <div class="card-header-title">
+            <div class="card-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <h2 class="card-title-text">設定：名前 と 到達にかかる時間</h2>
+                <span class="badge-info">分・秒（三桁: 0〜999）</span>
+                <span class="badge-status">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  自動保存中
+                </span>
+              </div>
+              <p class="card-subtitle">各人の「名前」と「到達にかかる時間（分・秒）」を入力してください（リロード後も保持されます）</p>
+            </div>
+          </div>
+
+          <div class="table-actions">
+            <button type="button" id="btn-open-batch" class="btn-secondary" title="テキストをまとめて貼り付け・入力">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+              一括入力
+            </button>
+            <button type="button" id="btn-clear-travelers" class="btn-secondary" title="すべての入力をクリア">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              クリア
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body" style="padding-top:10px;">
+          <div class="table-responsive">
+            <table class="travelers-table">
+              <thead>
+                <tr>
+                  <th class="col-num">#</th>
+                  <th class="col-name">名前</th>
+                  <th class="col-time">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span>到達にかかる時間（分・秒）</span>
+                    </div>
+                  </th>
+                  <th class="col-total">合計</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 1行目 -->
+                <tr>
+                  <td class="col-num">1</td>
+                  <td class="col-name"><input type="text" id="traveler-name-0" class="input-text" placeholder="名前 1" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-0" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-0" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-0" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-0" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 2行目 -->
+                <tr>
+                  <td class="col-num">2</td>
+                  <td class="col-name"><input type="text" id="traveler-name-1" class="input-text" placeholder="名前 2" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-1" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-1" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-1" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-1" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 3行目 -->
+                <tr>
+                  <td class="col-num">3</td>
+                  <td class="col-name"><input type="text" id="traveler-name-2" class="input-text" placeholder="名前 3" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-2" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-2" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-2" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-2" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 4行目 -->
+                <tr>
+                  <td class="col-num">4</td>
+                  <td class="col-name"><input type="text" id="traveler-name-3" class="input-text" placeholder="名前 4" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-3" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-3" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-3" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-3" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 5行目 -->
+                <tr>
+                  <td class="col-num">5</td>
+                  <td class="col-name"><input type="text" id="traveler-name-4" class="input-text" placeholder="名前 5" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-4" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-4" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-4" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-4" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 6行目 -->
+                <tr>
+                  <td class="col-num">6</td>
+                  <td class="col-name"><input type="text" id="traveler-name-5" class="input-text" placeholder="名前 6" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-5" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-5" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-5" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-5" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 7行目 -->
+                <tr>
+                  <td class="col-num">7</td>
+                  <td class="col-name"><input type="text" id="traveler-name-6" class="input-text" placeholder="名前 7" /></td>
+                  <td class="col-time">
+                    <div class="time-input-pair">
+                      <div class="pair-unit"><input type="text" id="traveler-min-6" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>分</span></div>
+                      <div class="pair-unit"><input type="text" id="traveler-sec-6" class="input-digits" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" /><span>秒</span></div>
+                    </div>
+                  </td>
+                  <td class="col-total">
+                    <div class="total-badge-box">
+                      <span id="traveler-total-sec-6" class="total-sec-badge">0 秒</span>
+                      <span id="traveler-total-human-6" class="total-human-text" style="display:none;">(0秒)</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 時間ランキング（タイムラインバー） -->
+      <section class="card" aria-label="時間ランキング">
+        <div class="card-header">
+          <div class="card-header-title">
+            <div class="card-icon">
+              <img class="runner-icon-image" src="runner-icon.png" alt="走っている人" />
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 class="card-title-text">時間ランキング</h3>
+                <span id="timeline-gathering-note" class="badge-status" style="display:none;">集結時間を除く</span>
+              </div>
+              <p class="card-subtitle">誰がどれくらい前に出発して同時に着くかを視覚化（※バーは集結時間を含めない純粋な所要時間で表示）</p>
+            </div>
+          </div>
+
+          <button type="button" id="btn-sort-timeline" class="btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+            <span>出発が早い順</span>
+          </button>
+        </div>
+
+        <div class="card-body">
+          <div id="timeline-empty-notice" class="empty-notice">
+            名前を入力した部隊の時間ランキングがここに表示されます
+          </div>
+          <div id="timeline-list" class="timeline-list" style="display:none;"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- テキスト一括入力モーダル -->
+    <div id="batch-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="batch-modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="batch-modal-title" class="modal-title">テキスト一括入力（名前・分・秒・7行）</h3>
+          <button type="button" id="btn-close-batch" class="btn-modal-close" aria-label="閉じる">&times;</button>
+        </div>
+
+        <div class="modal-desc">
+          <p>1行につき「名前（空白）所要時間」の形式で入力してください。</p>
+          <p style="margin-top: 6px;">例：</p>
+          <ul class="modal-examples-list">
+            <li><span class="code-pill">佐藤 2分30秒</span></li>
+            <li><span class="code-pill">鈴木 1 45</span></li>
+            <li><span class="code-pill">田中 45秒</span></li>
+            <li><span class="code-pill">山本260</span></li>
+          </ul>
+        </div>
+
+        <textarea id="batch-textarea" class="batch-textarea" rows="7" placeholder="佐藤 2分30秒&#10;鈴木 45秒&#10;高橋 4分0秒&#10;田中 30秒&#10;渡辺 1分30秒&#10;伊藤 1分0秒&#10;山本 15秒"></textarea>
+
+        <div id="batch-error" class="modal-error">テキストを入力してください。</div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-batch" class="btn-secondary">キャンセル</button>
+          <button type="button" id="btn-apply-batch" class="btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>7行に反映する</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- アプリケーションエントリーポイント (Vanilla TypeScript / JS) -->
+    <script src="script.js"></script>
+  </body>
+</html>

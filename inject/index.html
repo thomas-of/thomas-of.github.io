@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>さし入りたる月の色</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px 20px;
+      background: #000;
+      color: #fff;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ========================= タイトルエリア ========================= */
+    .header-area {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #555;
+    }
+
+    /* シンプルな三日月 */
+    .moon-icon {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #fff;
+      position: relative;
+      margin-top: 2px;
+    }
+
+    .moon-icon::after {
+      content: "";
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      top: -4px;
+      left: 11px;
+      border-radius: 50%;
+      background: #000;
+    }
+
+    /* タイトルと説明文を囲むグループ */
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end; /* タイトルと説明文の語尾（右端）を揃える */
+      text-align: right;
+    }
+
+    .title {
+      margin: 0 0 2px 0;
+      color: #fff;
+      font-size: 30px;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+      line-height: 1.2;
+    }
+
+    .sub-description {
+      color: #ccc;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+
+    /* ========================= 入力部分 ========================= */
+    .input-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      padding-left: 10px;
+      border-left: 3px solid #fff;
+      color: #fff;
+      font-size: 21px;
+      font-weight: normal;
+      letter-spacing: 0.06em;
+    }
+
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    input {
+      width: 75px;
+      height: 50px;
+      padding: 5px;
+      background: #0a0a0a;
+      color: #fff;
+      border: 1px solid #777;
+      border-radius: 6px;
+      font-family: sans-serif;
+      font-size: 21px;
+      text-align: center;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #fff;
+    }
+
+    .unit {
+      color: #fff;
+      font-size: 17px;
+      margin-right: 3px;
+    }
+
+    /* ========================= 説明 ========================= */
+    .note {
+      margin-top: 8px;
+      color: #888;
+      font-family: sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ========================= 結果 ========================= */
+    .result {
+      margin-top: 18px;
+      padding: 14px 15px;
+      background: #050505;
+      border: 1px solid #fff;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .result-label {
+      margin-bottom: 4px;
+      color: #fff;
+      font-size: 20px;
+      letter-spacing: 0.1em;
+    }
+
+    .result-time {
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 50px;
+      font-weight: bold;
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+    }
+
+    /* ========================= スマートフォン ========================= */
+    @media (max-width: 500px) {
+      body {
+        padding: 20px 15px;
+      }
+
+      .header-area {
+        margin-bottom: 20px;
+        gap: 10px;
+      }
+
+      .moon-icon, .moon-icon::after {
+        width: 32px;
+        height: 32px;
+      }
+
+      .moon-icon::after {
+        top: -4px;
+        left: 9px;
+      }
+
+      .title {
+        font-size: 25px;
+      }
+
+      .sub-description {
+        font-size: 14px;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        font-size: 19px;
+        margin-bottom: 8px;
+      }
+
+      input {
+        width: 67px;
+        height: 48px;
+        font-size: 20px;
+      }
+
+      .unit {
+        font-size: 16px;
+      }
+
+      .result {
+        margin-top: 15px;
+        padding: 12px 10px;
+      }
+
+      .result-label {
+        font-size: 18px;
+        margin-bottom: 2px;
+      }
+
+      .result-time {
+        font-size: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- タイトルエリア -->
+    <div class="header-area">
+      <div class="moon-icon"></div>
+      <div class="title-group">
+        <h1 class="title">さし入りたる月の色</h1>
+        <div class="sub-description">算用することわづらはし</div>
+      </div>
+    </div>
+
+    <!-- 到着予定時刻 -->
+    <div class="input-group">
+      <label>到着予定時刻</label>
+      <div class="time-inputs">
+        <input type="number" id="arrivalHour" min="0" max="23" value="12">
+        <span class="unit">時</span>
+        <input type="number" id="arrivalMinute" min="0" max="59" value="00">
+        <span class="unit">分</span>
+        <input type="number" id="arrivalSecond" min="0" max="59" value="00">
+        <span class="unit">秒</span>
+      </div>
+      <div class="note">
+        ※ 1秒後に着きたい場合は、1秒足してください。
+      </div>
+    </div>
+
+    <!-- 所要時間 -->
+    <div class="input-group">
+      <label>所要時間</label>
+      <div class="time-inputs">
+        <input type="number" id="durationMinute" min="0" value="0">
+        <span class="unit">分</span>
+        <input type="number" id="durationSecond" min="0" max="999" value="0">
+        <span class="unit">秒</span>
+      </div>
+      <div class="note">
+        ※ 分・秒ともに3桁まで入力できます。<br>
+        例：125分30秒 → 2時間5分30秒
+      </div>
+    </div>
+
+    <!-- 結果 -->
+    <div class="result">
+      <div class="result-label">出発時刻</div>
+      <div class="result-time" id="departureTime">--:--:--</div>
+    </div>
+  </div>
+
+  <script>
+    const arrivalHour = document.getElementById('arrivalHour');
+    const arrivalMinute = document.getElementById('arrivalMinute');
+    const arrivalSecond = document.getElementById('arrivalSecond');
+    const durationMinute = document.getElementById('durationMinute');
+    const durationSecond = document.getElementById('durationSecond');
+    const departureTime = document.getElementById('departureTime');
+
+    const inputs = [
+      arrivalHour,
+      arrivalMinute,
+      arrivalSecond,
+      durationMinute,
+      durationSecond
+    ];
+
+    // キャッシュ（localStorage）から復元
+    function loadCachedValues() {
+      inputs.forEach(input => {
+        const cachedValue = localStorage.getItem(`saved_${input.id}`);
+        if (cachedValue !== null) {
+          input.value = cachedValue;
+        }
+      });
+    }
+
+    // キャッシュ（localStorage）に保存
+    function saveValuesToCache() {
+      inputs.forEach(input => {
+        localStorage.setItem(`saved_${input.id}`, input.value);
+      });
+    }
+
+    function calculateDepartureTime() {
+      const hour = Number(arrivalHour.value);
+      const minute = Number(arrivalMinute.value);
+      const second = Number(arrivalSecond.value);
+      const durationMin = Number(durationMinute.value);
+      const durationSec = Number(durationSecond.value);
+
+      if (
+        !Number.isFinite(hour) ||
+        !Number.isFinite(minute) ||
+        !Number.isFinite(second) ||
+        !Number.isFinite(durationMin) ||
+        !Number.isFinite(durationSec)
+      ) {
+        departureTime.textContent = '--:--:--';
+        return;
+      }
+
+      /* 到着時刻を秒に変換 */
+      const arrivalTotalSeconds = hour * 3600 + minute * 60 + second;
+
+      /* 所要時間を秒に変換 */
+      const durationTotalSeconds = durationMin * 60 + durationSec;
+
+      /* 出発時刻 */
+      let departureTotalSeconds = arrivalTotalSeconds - durationTotalSeconds;
+
+      /* 0時より前なら前日 */
+      const secondsPerDay = 24 * 60 * 60;
+      departureTotalSeconds = ((departureTotalSeconds % secondsPerDay) + secondsPerDay) % secondsPerDay;
+
+      /* 時・分・秒 */
+      const departureHour = Math.floor(departureTotalSeconds / 3600);
+      const departureMinute = Math.floor((departureTotalSeconds % 3600) / 60);
+      const departureSecond = departureTotalSeconds % 60;
+
+      /* 2桁表示 */
+      const hh = String(departureHour).padStart(2, '0');
+      const mm = String(departureMinute).padStart(2, '0');
+      const ss = String(departureSecond).padStart(2, '0');
+
+      departureTime.textContent = `${hh}:${mm}:${ss}`;
+
+      // 入力値をキャッシュに保存
+      saveValuesToCache();
+    }
+
+    /* 入力変更時に再計算 */
+    inputs.forEach(input => {
+      input.addEventListener('input', calculateDepartureTime);
+    });
+
+    /* 初期処理：復元後に計算を実行 */
+    loadCachedValues();
+    calculateDepartureTime();
+  </script>
+</body>
+</html>

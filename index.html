@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thomas Energy</title>
 
+<!-- Google Fonts: Anton -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
 <style>
 * {
     box-sizing: border-box;
@@ -48,23 +53,25 @@ body {
     justify-content: center;
     align-items: center;
     
-    /* Impact フォントスタック */
-    font-family: 'Impact', 'Charcoal', 'Arial Black', sans-serif;
+    /* Anton フォント */
+    font-family: 'Anton', sans-serif;
     text-align: center;
     line-height: 0.95;
     will-change: transform, opacity;
 }
 
-/* 背景写真（透明度 0.7） */
+/* 背景写真（見切れ防止のため幅120%で配置） */
 #picture img {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
     object-fit: cover;
     object-position: center center;
     z-index: 1;
-    opacity: 0.7; /* 背景画像を少し薄く */
+    opacity: 0.7; /* 背景画像を薄く (0.7) */
+    will-change: transform;
 }
 
 /* テキストコンテナ */
@@ -76,19 +83,19 @@ body {
     align-items: center;
 }
 
-/* 1段目 & 2段目 共通スタイル（Impact・白文字） */
+/* 1段目 & 2段目 共通スタイル（Anton・白文字） */
 .brand-text {
     font-size: clamp(60px, 13vw, 160px);
-    font-weight: normal;
+    font-weight: 400;
     letter-spacing: 0.04em;
-    color: #ffffff; /* 文字色を白に変更 */
+    color: #ffffff; /* 文字色：白 */
     text-transform: uppercase;
     margin: 0;
     text-shadow: none;
 }
 
 /* =========================================
-   アニメーション用要素（消える瞬間に小さな四角で発光）
+   アニメーション用要素（消える瞬間に白く発光）
 ========================================= */
 #line {
     position: absolute;
@@ -105,14 +112,14 @@ body {
     will-change: transform, opacity, height, box-shadow;
 }
 
-/* 中央の一点で光る四角形 */
+/* 中央の一点で光る四角形（スマホ視認性向上のためベースサイズ調整） */
 #point {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 3px; /* 小さめの四角形ベース */
-    height: 3px;
-    border-radius: 0; /* 丸ではなく四角形 */
+    width: 5px; /* スマホでもクッキリ見えるよう少し拡大 */
+    height: 5px;
+    border-radius: 0; /* 四角形 */
     background: #ffffff;
     transform: translate(-50%, -50%) scale(0);
     opacity: 0;
@@ -128,7 +135,7 @@ body {
 <div id="screen">
     <div id="picture">
         <!-- 指定背景画像 -->
-        <img src="https://thomas-of.github.io/sand.jpg" alt="Background">
+        <img id="bgImg" src="https://thomas-of.github.io/sand.jpg" alt="Background">
         <div class="text-container">
             <div class="brand-text">Thomas</div>
             <div class="brand-text">Energy</div>
@@ -140,17 +147,101 @@ body {
 
 <script>
 const picture = document.getElementById("picture");
+const bgImg = document.getElementById("bgImg");
 const line = document.getElementById("line");
 const point = document.getElementById("point");
 
-let running = false;
-let animationFrameId = null;
+let isPoweringOff = false;
 let autoTimerId = null;
+let globalAnimFrame = null;
+let startTime = null;
+
+// 背景画像パン用の設定（20秒周期に復帰）
+const PAN_CYCLE_MS = 20000; // 1往復20秒
+const PAN_RANGE_PERCENT = 5; // 左に-5%、右に+5%滑らかに移動
+
+// 常に背景を滑らかにパンさせる＆消灯アニメーションを処理するメインループ
+function globalLoop(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const globalElapsed = timestamp - startTime;
+
+    // サイン波で-5%〜+5%の範囲をなめらかに往復
+    const progress = (globalElapsed % PAN_CYCLE_MS) / PAN_CYCLE_MS;
+    const shiftPercent = Math.sin(progress * Math.PI * 2) * PAN_RANGE_PERCENT;
+    bgImg.style.transform = `translateX(${shiftPercent}%)`;
+
+    // 消灯アニメーション実行中の処理
+    if (isPoweringOff && window.powerOffStartTime) {
+        const elapsed = timestamp - window.powerOffStartTime;
+
+        // PHASE 1: 縦方向への収束
+        if (elapsed < 500) {
+            const t = elapsed / 500;
+            const p = verticalEase(t);
+            const scaleY = Math.max(0.003, 1 - p * 0.997);
+
+            picture.style.transform = `translateY(-50%) scaleY(${scaleY})`;
+            line.style.opacity = Math.pow(t, 2.2) * 0.95;
+            line.style.transform = "translateY(-50%) scaleX(1)";
+            line.style.height = `${Math.max(1, 6 * (1 - p) + 1)}px`;
+            
+            if (t > 0.7) {
+                line.style.boxShadow = "0 0 10px #ffffff, 0 0 20px #ffffff";
+            }
+        }
+        // PHASE 2: 横方向から中央への収束
+        else if (elapsed < 1000) {
+            picture.style.opacity = "0";
+
+            const t = (elapsed - 500) / 500;
+            const p = horizontalEase(t);
+            const scaleX = Math.max(0, 1 - p);
+
+            line.style.boxShadow = "0 0 12px #ffffff, 0 0 25px #ffffff";
+            line.style.transform = `translateY(-50%) scaleX(${scaleX})`;
+            line.style.opacity = 1.0 - p * 0.1;
+            line.style.height = `${Math.max(0.7, 2 - p * 1.3)}px`;
+        }
+        // PHASE 3: 中央で四角形がパッと白く発光して消滅（スマホでも見やすく強調）
+        else if (elapsed < 1220) {
+            line.style.opacity = "0";
+
+            const t = (elapsed - 1000) / 220;
+
+            if (t < 0.45) {
+                const p = t / 0.45;
+                const glow = Math.sin((p * Math.PI) / 2);
+
+                point.style.opacity = 1.0;
+                point.style.transform = `translate(-50%, -50%) scale(${0.8 + glow * 1.1})`;
+                // 多層グロー効果でスマホの画面でも視認性を格段に強化
+                point.style.boxShadow = `0 0 ${12 + glow * 18}px #ffffff, 0 0 ${25 + glow * 35}px rgba(255,255,255,0.8)`;
+            } else {
+                const p = (t - 0.45) / 0.55;
+                const fade = 1 - p;
+
+                point.style.opacity = fade;
+                point.style.transform = `translate(-50%, -50%) scale(${fade * 1.8})`;
+                point.style.boxShadow = `0 0 ${fade * 30}px #ffffff, 0 0 ${fade * 50}px rgba(255,255,255,0.6)`;
+            }
+        }
+        // 完全消灯
+        else {
+            picture.style.display = "none";
+            line.style.opacity = "0";
+            point.style.opacity = "0";
+            point.style.transform = "translate(-50%, -50%) scale(0)";
+            isPoweringOff = false;
+        }
+    }
+
+    globalAnimFrame = requestAnimationFrame(globalLoop);
+}
 
 function reset() {
     if (autoTimerId) clearTimeout(autoTimerId);
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    running = false;
+    isPoweringOff = false;
+    window.powerOffStartTime = null;
 
     picture.style.display = "flex";
     picture.style.opacity = "1";
@@ -165,7 +256,7 @@ function reset() {
     point.style.transform = "translate(-50%, -50%) scale(0)";
     point.style.boxShadow = "none";
 
-    // 5秒後に自動起動
+    // 5秒後に消灯シーケンスを起動
     autoTimerId = setTimeout(() => {
         powerOff();
     }, 5000);
@@ -180,88 +271,18 @@ function horizontalEase(t) {
 }
 
 function powerOff() {
-    if (running) return;
-    running = true;
-
-    const start = performance.now();
-
-    function animate(now) {
-        const elapsed = now - start;
-
-        // PHASE 1: 縦方向への収束
-        if (elapsed < 500) {
-            const t = elapsed / 500;
-            const p = verticalEase(t);
-            const scaleY = Math.max(0.003, 1 - p * 0.997);
-
-            picture.style.transform = `translateY(-50%) scaleY(${scaleY})`;
-            line.style.opacity = Math.pow(t, 2.2) * 0.95;
-            line.style.transform = "translateY(-50%) scaleX(1)";
-            line.style.height = `${Math.max(1, 6 * (1 - p) + 1)}px`;
-            
-            if (t > 0.7) {
-                line.style.boxShadow = "0 0 8px #ffffff, 0 0 15px #ffffff";
-            }
-        }
-        // PHASE 2: 横方向から中央への収束
-        else if (elapsed < 1000) {
-            picture.style.opacity = "0";
-
-            const t = (elapsed - 500) / 500;
-            const p = horizontalEase(t);
-            const scaleX = Math.max(0, 1 - p);
-
-            line.style.boxShadow = "0 0 10px #ffffff, 0 0 20px #ffffff";
-            line.style.transform = `translateY(-50%) scaleX(${scaleX})`;
-            line.style.opacity = 1.0 - p * 0.1;
-            line.style.height = `${Math.max(0.7, 2 - p * 1.3)}px`;
-        }
-        // PHASE 3: 中央で小さな四角形が白く発光して消滅
-        else if (elapsed < 1180) {
-            line.style.opacity = "0";
-
-            const t = (elapsed - 1000) / 180;
-
-            if (t < 0.4) {
-                const p = t / 0.4;
-                const glow = Math.sin((p * Math.PI) / 2);
-
-                point.style.opacity = 1.0;
-                // 小さめの四角形としてスケール（最大でも小さめに制御）
-                point.style.transform = `translate(-50%, -50%) scale(${0.6 + glow * 0.6})`;
-                point.style.boxShadow = `0 0 ${8 + glow * 12}px #ffffff, 0 0 ${16 + glow * 20}px #ffffff`;
-            } else {
-                const p = (t - 0.4) / 0.6;
-                const fade = 1 - p;
-
-                point.style.opacity = fade;
-                point.style.transform = `translate(-50%, -50%) scale(${fade * 1.2})`;
-                point.style.boxShadow = `0 0 ${fade * 20}px #ffffff`;
-            }
-        }
-        // 完全消灯
-        else {
-            picture.style.display = "none";
-            line.style.opacity = "0";
-            point.style.opacity = "0";
-            point.style.transform = "translate(-50%, -50%) scale(0)";
-
-            running = false;
-            return;
-        }
-
-        animationFrameId = requestAnimationFrame(animate);
-    }
-
-    animationFrameId = requestAnimationFrame(animate);
+    if (isPoweringOff) return;
+    isPoweringOff = true;
+    window.powerOffStartTime = performance.now();
 }
 
 // 画面をどこでもタップ/クリックでリセット
 window.addEventListener("click", reset);
 window.addEventListener("touchstart", reset, { passive: true });
 
-// 初期化・タイマースタート
+// 初期化・ルーツスタート
 reset();
+globalAnimFrame = requestAnimationFrame(globalLoop);
 </script>
 
 </body>
